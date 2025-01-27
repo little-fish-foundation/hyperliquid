@@ -7,7 +7,7 @@ All info on the Hyperliquid API can be found here: [HyperLiquid API Documentatio
 ## Installation
 
 ```bash
-npm install --save hyperliquid
+npm install --save hyperliquidnw
 ```
 
 
@@ -19,7 +19,7 @@ npm install --save hyperliquid
 If you don't do this you will be unable to use some of the SDK methods successfully. If you are using
 your own Private Key then it's not necessary as the SDK can derive your wallet address from the Private key.
 ```typescript
-const { Hyperliquid } = require('hyperliquid');
+const { Hyperliquid } = require('hyperliquidnw');
 
 const sdk = new Hyperliquid({
   enableWs: true, // boolean (OPTIONAL) - Enable/disable WebSocket functionality, defaults to true
@@ -27,6 +27,7 @@ const sdk = new Hyperliquid({
   testnet: <testnet - boolean (OPTIONAL)>,
   walletAddress: <walletAddress - string (Required if you are using an API Agent Wallet, otherwise not necessary)>,
   vaultAddress: <vaultAddress - string (OPTIONAL)>
+  maxReconnectAttempts: <maxReconnectAttempts - number (OPTIONAL)>
 });
 
 // Use the SDK methods
@@ -150,7 +151,7 @@ All methods supported can be found here: [Hyperliquid Info Endpoint API Document
 ### WebSocket Methods
 
 ```typescript
-const { Hyperliquid } = require('hyperliquid');
+const { Hyperliquid } = require('hyperliquidnw');
 
 async function testWebSocket() {
     // Create a new Hyperliquid instance
@@ -185,6 +186,55 @@ async function testWebSocket() {
 }
 
 testWebSocket();
+```
+
+```
+const { Hyperliquid } = require('hyperliquidnw');
+
+const private_key = "";
+const user_address = "0x2711ce5de8b2Ddc8079622079A2fa1457dA78306"
+const testnet = true// false for mainnet, true for testnet
+const vaultAddress = null // or your vault address
+const hlsdk = new Hyperliquid({
+    privateKey: private_key,
+    testnet: testnet,
+    walletAddress: user_address,
+    vaultAddress: vaultAddress,
+    maxReconnectAttempts: 100
+});
+function subInfos() {
+    hlsdk.subscriptions.subscribeToAllMids((data) => {
+        console.log('===subscribeToAllMids===>HYPE-SPOT', data['HYPE-SPOT']);
+    });
+    hlsdk.subscriptions.subscribeToUserFills(user_address, (data) => {
+        console.log('===subscribeToUserFills===', data.fills[0]);
+    });
+    hlsdk.subscriptions.subscribeToOrderUpdates(user_address, (data => {
+        data.map(async v => {
+            console.log('===subscribeToOrderUpdates===', v)
+        })
+    }))
+}
+async function testWs() {
+    try {
+        await hlsdk.connect();
+        console.log('Connected to WebSocket');
+        subInfos()
+        setTimeout(() => {
+            console.log('User CancleConnected to WebSocket');
+            hlsdk.disconnect()
+        }, 5*1000);
+        // reconnect
+        hlsdk.ws.on('reconnect', () => {
+            subInfos()
+        })
+
+        
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+testWs()
 ```
 
 

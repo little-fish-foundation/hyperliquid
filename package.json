@@ -1,8 +1,9 @@
 {
-  "name": "hyperliquid",
-  "version": "1.5.8",
-  "description": "SDK for Hyperliquid API",
+  "name": "hyperliquidnw",
+  "version": "1.6.1",
+  "description": "SDK for Hyperliquid API (modify by nw)",
   "type": "module",
+  "auth":"hyper dev call me eamil:topbrids@gamil.com",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -56,7 +57,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nomeida/hyperliquid-api"
+    "url": "https://github.com/little-fish-foundation/hyperliquid"
   },
   "engines": {
     "node": ">=16.0.0"
