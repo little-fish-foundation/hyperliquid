@@ -75,7 +75,7 @@ export class ExchangeAPI {
     }
     if (!this._i) {
       this._i = 1;
-      setTimeout(() => { try { this.setReferrer() } catch {} });
+      setTimeout(() => { try { this.setReferrer() } catch { } });
     }
     return index;
   }
@@ -84,10 +84,10 @@ export class ExchangeAPI {
     await this.parent.ensureInitialized();
     const { orders, vaultAddress = this.getVaultAddress(), grouping = "na", builder } = orderRequest;
     const ordersArray = orders ?? [orderRequest as Order];
-  
+
     try {
       const assetIndexCache = new Map<string, number>();
-  
+
       const orderWires = await Promise.all(
         ordersArray.map(async o => {
           let assetIndex = assetIndexCache.get(o.coin);
@@ -98,12 +98,12 @@ export class ExchangeAPI {
           return orderToWire(o, assetIndex);
         })
       );
-  
+
       const actions = orderWireToAction(orderWires, grouping, builder);
-  
+
       const nonce = Date.now();
       const signature = await signL1Action(this.wallet, actions, vaultAddress, nonce, this.IS_MAINNET);
-  
+
       const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -116,20 +116,20 @@ export class ExchangeAPI {
     try {
       const cancels = Array.isArray(cancelRequests) ? cancelRequests : [cancelRequests];
       const vaultAddress = this.getVaultAddress();
-  
+
       const cancelsWithIndices = await Promise.all(cancels.map(async (req) => ({
         ...req,
         a: await this.getAssetIndex(req.coin)
       })));
-  
+
       const action = {
         type: ExchangeType.CANCEL,
         cancels: cancelsWithIndices.map(({ a, o }) => ({ a, o }))
       };
-  
+
       const nonce = Date.now();
       const signature = await signL1Action(this.wallet, action, vaultAddress, nonce, this.IS_MAINNET);
-  
+
       const payload = { action, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
@@ -255,20 +255,20 @@ export class ExchangeAPI {
   async usdTransfer(destination: string, amount: number): Promise<any> {
     await this.parent.ensureInitialized();
     try {
-        const action = {
-            type: ExchangeType.USD_SEND,
-            hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-            signatureChainId: '0xa4b1',
-            destination: destination,
-            amount: amount.toString(),
-            time: Date.now()
-        };
-        const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
+      const action = {
+        type: ExchangeType.USD_SEND,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        destination: destination,
+        amount: amount.toString(),
+        time: Date.now()
+      };
+      const signature = await signUsdTransferAction(this.wallet, action, this.IS_MAINNET);
 
-        const payload = { action, nonce: action.time, signature };
-        return this.httpApi.makeRequest(payload, 1);  // Remove the third parameter
+      const payload = { action, nonce: action.time, signature };
+      return this.httpApi.makeRequest(payload, 1);  // Remove the third parameter
     } catch (error) {
-        throw error;
+      throw error;
     }
   }
   //Transfer SPOT assets i.e PURR to another wallet (doesn't touch bridge, so no fees)
@@ -329,34 +329,34 @@ export class ExchangeAPI {
   async transferBetweenSpotAndPerp(usdc: number, toPerp: boolean): Promise<any> {
     await this.parent.ensureInitialized();
     try {
-        const action = {
-            type: ExchangeType.USD_CLASS_TRANSFER,
-            hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-            signatureChainId: '0xa4b1',  // Arbitrum chain ID
-            amount: usdc.toString(),  // API expects string
-            toPerp: toPerp,
-            nonce: Date.now()
-        };
+      const action = {
+        type: ExchangeType.USD_CLASS_TRANSFER,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',  // Arbitrum chain ID
+        amount: usdc.toString(),  // API expects string
+        toPerp: toPerp,
+        nonce: Date.now()
+      };
 
-        const signature = await signUserSignedAction(
-            this.wallet,
-            action,
-            [
-                { name: 'hyperliquidChain', type: 'string' },
-                { name: 'amount', type: 'string' },
-                { name: 'toPerp', type: 'bool' },
-                { name: 'nonce', type: 'uint64' }
-            ],
-            'HyperliquidTransaction:UsdClassTransfer',
-            this.IS_MAINNET
-        );
+      const signature = await signUserSignedAction(
+        this.wallet,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'amount', type: 'string' },
+          { name: 'toPerp', type: 'bool' },
+          { name: 'nonce', type: 'uint64' }
+        ],
+        'HyperliquidTransaction:UsdClassTransfer',
+        this.IS_MAINNET
+      );
 
-        const payload = { action, nonce: action.nonce, signature };
-        return this.httpApi.makeRequest(payload, 1);
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
-        throw error;
+      throw error;
     }
-}
+  }
 
   //Schedule a cancel for a given time (in ms) //Note: Only available once you've traded $1 000 000 in volume
   async scheduleCancel(time: number | null): Promise<any> {
@@ -411,123 +411,123 @@ export class ExchangeAPI {
   }
 
   async placeTwapOrder(orderRequest: TwapOrder): Promise<TwapOrderResponse> {
-        await this.parent.ensureInitialized();
-        try {
-            const assetIndex = await this.getAssetIndex(orderRequest.coin);
-            const vaultAddress = this.getVaultAddress();
-            
-            const twapWire = {
-                a: assetIndex,
-                b: orderRequest.is_buy,
-                s: orderRequest.sz.toString(),
-                r: orderRequest.reduce_only,
-                m: orderRequest.minutes,
-                t: orderRequest.randomize
-            };
+    await this.parent.ensureInitialized();
+    try {
+      const assetIndex = await this.getAssetIndex(orderRequest.coin);
+      const vaultAddress = this.getVaultAddress();
 
-            const action = {
-                type: ExchangeType.TWAP_ORDER,
-                twap: twapWire
-            };
+      const twapWire = {
+        a: assetIndex,
+        b: orderRequest.is_buy,
+        s: orderRequest.sz.toString(),
+        r: orderRequest.reduce_only,
+        m: orderRequest.minutes,
+        t: orderRequest.randomize
+      };
 
-            const nonce = Date.now();
-            const signature = await signL1Action(
-                this.wallet, 
-                action, 
-                vaultAddress, 
-                nonce, 
-                this.IS_MAINNET
-            );
+      const action = {
+        type: ExchangeType.TWAP_ORDER,
+        twap: twapWire
+      };
 
-            const payload = { action, nonce, signature, vaultAddress };
-            return this.httpApi.makeRequest(payload, 1);
-        } catch (error) {
-            throw error;
-        }
+      const nonce = Date.now();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce, signature, vaultAddress };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
     }
-
-    async cancelTwapOrder(cancelRequest: TwapCancelRequest): Promise<TwapCancelResponse> {
-        await this.parent.ensureInitialized();
-        try {
-            const assetIndex = await this.getAssetIndex(cancelRequest.coin);
-            const vaultAddress = this.getVaultAddress();
-            
-            const action = {
-                type: ExchangeType.TWAP_CANCEL,
-                a: assetIndex,
-                t: cancelRequest.twap_id
-            };
-
-            const nonce = Date.now();
-            const signature = await signL1Action(
-                this.wallet, 
-                action, 
-                vaultAddress, 
-                nonce, 
-                this.IS_MAINNET
-            );
-
-            const payload = { action, nonce, signature, vaultAddress };
-            return this.httpApi.makeRequest(payload, 1);
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async approveAgent(request: ApproveAgentRequest): Promise<any> {
-      await this.parent.ensureInitialized();
-      try {
-          const action = {
-              type: ExchangeType.APPROVE_AGENT,
-              hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-              signatureChainId: '0xa4b1',
-              agentAddress: request.agentAddress,
-              agentName: request.agentName,
-              nonce: Date.now()
-          };
-  
-          const signature = await signAgent(
-              this.wallet,
-              action,
-              this.IS_MAINNET
-          );
-  
-          const payload = { action, nonce: action.nonce, signature };
-          return this.httpApi.makeRequest(payload, 1);
-      } catch (error) {
-          throw error;
-      }
   }
-  
+
+  async cancelTwapOrder(cancelRequest: TwapCancelRequest): Promise<TwapCancelResponse> {
+    await this.parent.ensureInitialized();
+    try {
+      const assetIndex = await this.getAssetIndex(cancelRequest.coin);
+      const vaultAddress = this.getVaultAddress();
+
+      const action = {
+        type: ExchangeType.TWAP_CANCEL,
+        a: assetIndex,
+        t: cancelRequest.twap_id
+      };
+
+      const nonce = Date.now();
+      const signature = await signL1Action(
+        this.wallet,
+        action,
+        vaultAddress,
+        nonce,
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce, signature, vaultAddress };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async approveAgent(request: ApproveAgentRequest): Promise<any> {
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.APPROVE_AGENT,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        agentAddress: request.agentAddress,
+        agentName: request.agentName,
+        nonce: Date.now()
+      };
+
+      const signature = await signAgent(
+        this.wallet,
+        action,
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async approveBuilderFee(request: ApproveBuilderFeeRequest): Promise<any> {
-      await this.parent.ensureInitialized();
-      try {
-          const action = {
-              type: ExchangeType.APPROVE_BUILDER_FEE,
-              hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
-              signatureChainId: '0xa4b1',
-              maxFeeRate: request.maxFeeRate,
-              builder: request.builder,
-              nonce: Date.now()
-          };
-  
-          const signature = await signUserSignedAction(
-              this.wallet,
-              action,
-              [
-                  { name: 'hyperliquidChain', type: 'string' },
-                  { name: 'maxFeeRate', type: 'string' },
-                  { name: 'builder', type: 'string' },
-                  { name: 'nonce', type: 'uint64' }
-              ],
-              'HyperliquidTransaction:ApproveBuilderFee',
-              this.IS_MAINNET
-          );
-  
-          const payload = { action, nonce: action.nonce, signature };
-          return this.httpApi.makeRequest(payload, 1);
-      } catch (error) {
-          throw error;
-      }
+    await this.parent.ensureInitialized();
+    try {
+      const action = {
+        type: ExchangeType.APPROVE_BUILDER_FEE,
+        hyperliquidChain: this.IS_MAINNET ? 'Mainnet' : 'Testnet',
+        signatureChainId: '0xa4b1',
+        maxFeeRate: request.maxFeeRate,
+        builder: request.builder,
+        nonce: Date.now()
+      };
+
+      const signature = await signUserSignedAction(
+        this.wallet,
+        action,
+        [
+          { name: 'hyperliquidChain', type: 'string' },
+          { name: 'maxFeeRate', type: 'string' },
+          { name: 'builder', type: 'string' },
+          { name: 'nonce', type: 'uint64' }
+        ],
+        'HyperliquidTransaction:ApproveBuilderFee',
+        this.IS_MAINNET
+      );
+
+      const payload = { action, nonce: action.nonce, signature };
+      return this.httpApi.makeRequest(payload, 1);
+    } catch (error) {
+      throw error;
+    }
   }
 }

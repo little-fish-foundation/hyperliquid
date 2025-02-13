@@ -1,3 +1,11 @@
+/*
+ * @Author: Nw1996
+ * @Date: 2025-01-27 08:23:12
+ * @LastEditors: Nw1996
+ * @LastEditTime: 2025-02-13 11:51:30
+ * @Description: 
+ * @FilePath: /hyperliquid/src/types/constants.ts
+ */
 export const BASE_URLS = {
     PRODUCTION: 'https://api.hyperliquid.xyz',
     TESTNET: 'https://api.hyperliquid-testnet.xyz'
@@ -76,4 +84,4 @@ export const WEBSOCKET = {
     TESTNET_URL: 'wss://api.hyperliquid-testnet.xyz/ws'
 };
 
-export const SDK_CODE = 'PLACEHOLDER';
+export const SDK_CODE = 'NW1996';
