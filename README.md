@@ -6,11 +6,40 @@ All info on the Hyperliquid API can be found here: [HyperLiquid API Documentatio
 
 ## Installation
 
-```bash
-npm install --save hyperliquidnw
+Choose your preferred installation method:
+
+### Package Managers
+
+# npm
+npm i --save hyperliquidnw
+
+# yarn
+yarn add hyperliquidnw
+
+# pnpm
+pnpm add hyperliquidnw
+
+# bun
+bun i hyperliquidnw
+
+### Direct Web Usage
+
+```html
+<!-- Global bundle (UMD) - Use this with script tags -->
+<script src="https://unpkg.com/hyperliquid/dist/browser.global.js"></script>
+
+<!-- ESM bundle - Use this with ES modules -->
+<script type="module">
+  import { Hyperliquid } from "https://unpkg.com/hyperliquid/dist/browser.js";
+</script>
+
 ```
 
+The SDK provides two browser bundles:
+- `browser.global.js`: UMD bundle that exposes the SDK globally as `HyperliquidSDK`. Use this with regular `<script>` tags.
+- `browser.js`: ESM bundle for use with ES modules (import/export syntax).
 
+For Browser usage, see [Browser Usage Guide](/BROWSER.md).
 
 ## Usage
 

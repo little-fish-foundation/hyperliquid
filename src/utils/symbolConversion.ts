@@ -7,7 +7,7 @@ export class SymbolConversion {
     private exchangeToInternalNameMap: Map<string, string> = new Map();
     private httpApi: HttpApi;
     private refreshIntervalMs: number = 60000;
-    private refreshInterval: NodeJS.Timeout | null = null;
+    private refreshInterval: any = null;
     private initialized: boolean = false;
 
     constructor(baseURL: string, rateLimiter: any) {
@@ -17,9 +17,14 @@ export class SymbolConversion {
     async initialize(): Promise<void> {
         if (this.initialized) return;
         
-        await this.refreshAssetMaps();
-        this.startPeriodicRefresh();
-        this.initialized = true;
+        try {
+            await this.refreshAssetMaps();
+            this.startPeriodicRefresh();
+            this.initialized = true;
+        } catch (error) {
+            console.error('Failed to initialize SymbolConversion:', error);
+            throw error;
+        }
     }
 
     private ensureInitialized(): void {
@@ -28,10 +33,20 @@ export class SymbolConversion {
         }
     }
 
-    // Modify all public methods to check initialization
     async getInternalName(exchangeName: string): Promise<string | undefined> {
         this.ensureInitialized();
         return this.exchangeToInternalNameMap.get(exchangeName);
+    }
+
+    private startPeriodicRefresh(): void {
+        if (this.refreshInterval !== null) {
+            clearInterval(this.refreshInterval);
+        }
+        
+        // Use standard setInterval that works in both Node.js and browser
+        this.refreshInterval = setInterval(() => {
+            this.refreshAssetMaps().catch(console.error);
+        }, this.refreshIntervalMs);
     }
 
     private async refreshAssetMaps(): Promise<void> {
@@ -64,19 +79,6 @@ export class SymbolConversion {
             });
         } catch (error) {
             console.error('Failed to refresh asset maps:', error);
-        }
-    }
-
-    private startPeriodicRefresh(): void {
-        this.refreshInterval = setInterval(() => {
-            this.refreshAssetMaps();
-        }, this.refreshIntervalMs);
-    }
-
-    public stopPeriodicRefresh(): void {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
         }
     }
 
