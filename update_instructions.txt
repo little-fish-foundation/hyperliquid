@@ -11,3 +11,5 @@ Need to do it this way and commit package.json after, bc for some reason github 
 on the second most recent commit, not the most recent one idk why
 
 npm login --registry=https://registry.npmjs.org/
+
+npm publish --registry=https://registry.npmjs.org/
