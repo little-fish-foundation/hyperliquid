@@ -135,7 +135,8 @@ export class Hyperliquid {
                 this.info, 
                 formattedPrivateKey, 
                 this.symbolConversion, 
-                this.walletAddress
+                this.walletAddress,
+                this.vaultAddress
             );
             
             this.isValidPrivateKey = true;
@@ -171,7 +172,7 @@ export class Hyperliquid {
                 this,
                 this.vaultAddress
             );
-            this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress);
+            this.custom = new CustomOperations(this.exchange, this.info, formattedPrivateKey, this.symbolConversion, this.walletAddress,this.vaultAddress);
             this.isValidPrivateKey = true;
         } catch (error) {
             console.warn("Invalid private key provided. Some functionalities will be limited.");

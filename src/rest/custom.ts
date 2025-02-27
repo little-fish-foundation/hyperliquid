@@ -15,22 +15,24 @@ export class CustomOperations {
     private wallet: ethers.Wallet;
     private symbolConversion: SymbolConversion;
     private walletAddress: string | null;
+    private vaultAddress: string | null;
 
-    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null) {
+    constructor(exchange: ExchangeAPI, infoApi: InfoAPI, privateKey: string, symbolConversion: SymbolConversion, walletAddress: string | null = null, vaultAddress: string | null = null) {
         this.exchange = exchange;
         this.infoApi = infoApi;
         this.wallet = new ethers.Wallet(privateKey);
         this.symbolConversion = symbolConversion;
         this.walletAddress = walletAddress;
+        this.vaultAddress = vaultAddress;
     }
 
     async cancelAllOrders(symbol?: string): Promise<CancelOrderResponse> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.vaultAddress || this.walletAddress || this.wallet.address;
             const openOrders: UserOpenOrders = await this.infoApi.getUserOpenOrders(address);
 
             let ordersToCancel: UserOpenOrders;
-            
+
             for (let order of openOrders) {
                 order.coin = await this.symbolConversion.convertSymbol(order.coin);
             }
@@ -83,7 +85,7 @@ export class CustomOperations {
         console.log(decimals)
 
         px *= isBuy ? (1 + slippage) : (1 - slippage);
-        return Number(px.toFixed(isSpot ? 8 : decimals-1));
+        return Number(px.toFixed(isSpot ? 8 : decimals - 1));
     }
 
     async marketOpen(
@@ -97,7 +99,7 @@ export class CustomOperations {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
         const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
         console.log("Slippage Price: ", slippagePrice)
-        
+
         const orderRequest: OrderRequest = {
             coin: convertedSymbol,
             is_buy: isBuy,
@@ -122,7 +124,7 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const address = this.walletAddress || this.wallet.address;
+        const address = this.vaultAddress || this.walletAddress || this.wallet.address;
         const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
         for (const position of positions.assetPositions) {
             const item = position.position;
@@ -132,10 +134,10 @@ export class CustomOperations {
             const szi = parseFloat(item.szi);
             const closeSize = size || Math.abs(szi);
             const isBuy = szi < 0;
-            
+
             // Get aggressive Market Price
             const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
-            
+
             // Market Order is an aggressive Limit Order IoC
             const orderRequest: OrderRequest = {
                 coin: convertedSymbol,
@@ -152,13 +154,13 @@ export class CustomOperations {
 
             return this.exchange.placeOrder(orderRequest);
         }
-        
+
         throw new Error(`No position found for ${convertedSymbol}`);
     }
 
     async closeAllPositions(slippage: number = this.DEFAULT_SLIPPAGE): Promise<OrderResponse[]> {
         try {
-            const address = this.walletAddress || this.wallet.address;
+            const address = this.vaultAddress || this.walletAddress || this.wallet.address;
             const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
             const closeOrders: Promise<OrderResponse>[] = [];
 
