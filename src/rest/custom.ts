@@ -82,8 +82,6 @@ export class CustomOperations {
         //If not isSpot count how many decimals price has to use the same amount for rounding 
         const decimals = px.toString().split('.')[1]?.length || 0;
 
-        console.log(decimals)
-
         px *= isBuy ? (1 + slippage) : (1 - slippage);
         return Number(px.toFixed(isSpot ? 8 : decimals - 1));
     }
@@ -98,7 +96,6 @@ export class CustomOperations {
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
         const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
-        console.log("Slippage Price: ", slippagePrice)
 
         const orderRequest: OrderRequest = {
             coin: convertedSymbol,
@@ -112,7 +109,6 @@ export class CustomOperations {
         if (cloid) {
             orderRequest.cloid = cloid;
         }
-        console.log(orderRequest)
         return this.exchange.placeOrder(orderRequest);
     }
 
@@ -147,7 +143,7 @@ export class CustomOperations {
                 order_type: { limit: { tif: 'Ioc' } } as OrderType,
                 reduce_only: true
             };
-
+            // console.log(`szi=${szi}`,`size=${size}`,'marketClose=', orderRequest)
             if (cloid) {
                 orderRequest.cloid = cloid;
             }

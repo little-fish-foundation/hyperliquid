@@ -1,6 +1,6 @@
 {
   "name": "hyperliquidnw",
-  "version": "1.6.3",
+  "version": "1.6.5",
   "description": "SDK for Hyperliquid API modify by nw",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
