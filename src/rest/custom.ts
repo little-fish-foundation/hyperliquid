@@ -95,21 +95,24 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
-
-        const orderRequest: OrderRequest = {
-            coin: convertedSymbol,
-            is_buy: isBuy,
-            sz: size,
-            limit_px: slippagePrice,
-            order_type: { limit: { tif: 'Ioc' } } as OrderType,
-            reduce_only: false
-        };
-
-        if (cloid) {
-            orderRequest.cloid = cloid;
+        try {
+            const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
+            const orderRequest: OrderRequest = {
+                coin: convertedSymbol,
+                is_buy: isBuy,
+                sz: size,
+                limit_px: slippagePrice,
+                order_type: { limit: { tif: 'Ioc' } } as OrderType,
+                reduce_only: false
+            };
+            if (cloid) {
+                orderRequest.cloid = cloid;
+            }
+            return this.exchange.placeOrder(orderRequest);
+        } catch (error) {
+            console.error('marketOpen error =>', error)
+            throw new Error(`marketOpen error ${convertedSymbol}`);
         }
-        return this.exchange.placeOrder(orderRequest);
     }
 
     async marketClose(
@@ -120,35 +123,36 @@ export class CustomOperations {
         cloid?: string
     ): Promise<OrderResponse> {
         const convertedSymbol = await this.symbolConversion.convertSymbol(symbol);
-        const address = this.vaultAddress || this.walletAddress || this.wallet.address;
-        const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
-        for (const position of positions.assetPositions) {
-            const item = position.position;
-            if (convertedSymbol !== item.coin) {
-                continue;
+        try {
+            const address = this.vaultAddress || this.walletAddress || this.wallet.address;
+            const positions = await this.infoApi.perpetuals.getClearinghouseState(address);
+            for (const position of positions.assetPositions) {
+                const item = position.position;
+                if (convertedSymbol !== item.coin) {
+                    continue;
+                }
+                const szi = parseFloat(item.szi);
+                const closeSize = size || Math.abs(szi);
+                const isBuy = szi < 0;
+
+                // Get aggressive Market Price
+                const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
+                const orderRequest: OrderRequest = {
+                    coin: convertedSymbol,
+                    is_buy: isBuy,
+                    sz: closeSize,
+                    limit_px: slippagePrice,
+                    order_type: { limit: { tif: 'Ioc' } } as OrderType,
+                    reduce_only: true
+                };
+                if (cloid) {
+                    orderRequest.cloid = cloid;
+                }
+
+                return this.exchange.placeOrder(orderRequest);
             }
-            const szi = parseFloat(item.szi);
-            const closeSize = size || Math.abs(szi);
-            const isBuy = szi < 0;
-
-            // Get aggressive Market Price
-            const slippagePrice = await this.getSlippagePrice(convertedSymbol, isBuy, slippage, px);
-
-            // Market Order is an aggressive Limit Order IoC
-            const orderRequest: OrderRequest = {
-                coin: convertedSymbol,
-                is_buy: isBuy,
-                sz: closeSize,
-                limit_px: slippagePrice,
-                order_type: { limit: { tif: 'Ioc' } } as OrderType,
-                reduce_only: true
-            };
-            // console.log(`szi=${szi}`,`size=${size}`,'marketClose=', orderRequest)
-            if (cloid) {
-                orderRequest.cloid = cloid;
-            }
-
-            return this.exchange.placeOrder(orderRequest);
+        } catch (error) {
+            console.error('marketClose error=>', error)
         }
 
         throw new Error(`No position found for ${convertedSymbol}`);

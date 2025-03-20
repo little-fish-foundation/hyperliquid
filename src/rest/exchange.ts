@@ -107,6 +107,7 @@ export class ExchangeAPI {
       const payload = { action: actions, nonce, signature, vaultAddress };
       return this.httpApi.makeRequest(payload, 1);
     } catch (error) {
+      console.error('place order error=>',error)
       throw error;
     }
   }
