@@ -83,7 +83,11 @@ export class CustomOperations {
         const decimals = px.toString().split('.')[1]?.length || 0;
 
         px *= isBuy ? (1 + slippage) : (1 - slippage);
-        return Number(px.toFixed(isSpot ? 8 : decimals - 1));
+        let dec = decimals - 1
+        if (dec < 0) {
+            dec = 0
+        }
+        return Number(px.toFixed(isSpot ? 8 : dec));
     }
 
     async marketOpen(
